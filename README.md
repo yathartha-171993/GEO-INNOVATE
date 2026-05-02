@@ -7,7 +7,6 @@
 ---
 
 ## 🌍 Overview
-An intelligent ecosystem designed for students at **Happy Model School** to map local sustainable innovations. 
-This project aligns with **SDG 11: Sustainable Cities and Communities**.
+An intelligent ecosystem designed to map local sustainable innovations.
 The "Live Demo" Badge
 link - https://geo-innovate-1.onrender.com/
