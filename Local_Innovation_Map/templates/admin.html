@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <style>
+        body { font-family: sans-serif; padding: 50px; background: #fff; color: #333; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
+        
+        h2 { margin-top: 50px; font-size: 1.5rem; border-left: 4px solid #000; padding-left: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+        th, td { padding: 15px; border-bottom: 1px solid #eee; text-align: left; }
+        
+        .action-group { display: flex; gap: 10px; }
+
+        .approve-btn { 
+            background: #000; 
+            color: #fff; 
+            padding: 8px 15px; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            font-size: 0.85rem; 
+            white-space: nowrap;
+        }
+
+        .remove-btn { 
+            background: #fff; 
+            color: #ff4d4d; 
+            padding: 8px 15px; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            font-size: 0.85rem; 
+            border: 1px solid #ff4d4d;
+            white-space: nowrap;
+            transition: 0.3s;
+        }
+        .remove-btn:hover { background: #ff4d4d; color: #fff; }
+
+        .logout-btn { color: #666; text-decoration: none; font-size: 0.9rem; padding: 8px 15px; border: 1px solid #eee; border-radius: 5px; }
+        .logout-btn:hover { background: #f9f9f9; color: #000; border-color: #000; }
+        
+        .status-tag { font-size: 0.7rem; text-transform: uppercase; padding: 4px 8px; border-radius: 4px; font-weight: bold; background: #e2e8f0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Admin Console</h1>
+        <a href="/logout" class="logout-btn">Logout</a>
+    </div>
+
+    <!-- SECTION 1: PENDING SUBMISSIONS -->
+    <h2>Pending Innovations</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th style="width: 250px;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td><strong>{{ item.Name }}</strong></td>
+                <td style="color: #666; font-size: 0.9rem;">{{ item.Description }}</td>
+                <td>
+                    <div class="action-group">
+                        <a href="/approve/{{ item.Name }}" class="approve-btn">Approve</a>
+                        <a href="/remove/{{ item.Name }}" 
+                           class="remove-btn" 
+                           onclick="return confirm('Are you sure you want to permanently delete this submission?')">
+                           Remove
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3" style="text-align: center; color: #999; padding: 40px;">
+                    <p>No pending submissions found.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- SECTION 2: LIVE INNOVATIONS (EXISTING) -->
+    <h2>Live Innovations (On Map)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Location</th>
+                <th style="width: 150px;">Action</th>
+            </tr>
+        </thead>
+        <tbody id="live-innovations-body">
+            <!-- This section will be populated via the /api/markers endpoint -->
+        </tbody>
+    </table>
+
+    <script>
+    // 1. Load Live Innovations
+    function loadLiveInnovations() {
+        fetch('/api/markers?t=' + new Date().getTime()) // Timestamp prevents caching
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('live-innovations-body');
+                tableBody.innerHTML = ''; // Clear current table content
+
+                if (data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#999; padding:40px;">No live innovations found.</td></tr>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><strong>${item.Name}</strong></td>
+                        <td><span class="status-tag">${item.Category}</span></td>
+                        <td style="font-family:monospace; font-size:0.85rem;">${item.Lat}, ${item.Lng}</td>
+                        <td>
+                            <button 
+                               onclick="deleteInnovation('${encodeURIComponent(item.Name)}')" 
+                               class="remove-btn">
+                               Delete
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(err => console.error('Error loading live innovations:', err));
+    }
+
+    // 2. Authorization to Remove (Delete Logic)
+    function deleteInnovation(name) {
+        if (confirm(`Are you sure you want to permanently remove "${decodeURIComponent(name)}"?`)) {
+            // Using FETCH to ensure the backend processes the request
+            fetch(`/remove/${name}`, { method: 'GET' }) 
+                .then(response => {
+                    if (response.ok) {
+                        // Success: Reload the page to reflect the new state
+                        window.location.reload();
+                    } else {
+                        alert("Error: Could not delete the item from the server.");
+                    }
+                })
+                .catch(err => {
+                    console.error('Network Error:', err);
+                    alert("Failed to reach the server.");
+                });
+        }
+    }
+
+    // Initial Load
+    loadLiveInnovations();
+</script>
+</body>
+</html>
