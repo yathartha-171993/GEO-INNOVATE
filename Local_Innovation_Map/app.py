@@ -1,3 +1,12 @@
+"""
+GEO-INNOVATE: Local Innovation Map
+Copyright (C) 2026 Yathartha Mishra
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+"""
 import os
 import pandas as pd
 from flask import Flask, render_template, jsonify, request, redirect, session, url_for
